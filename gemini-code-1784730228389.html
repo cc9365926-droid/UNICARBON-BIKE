@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>UniCarbon 健身單車發電終端</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="bg-glow glow-1"></div>
+<div class="bg-glow glow-2"></div>
+
+<div class="terminal-container">
+    <header class="header">
+        <div class="brand">
+            <div class="logo-icon"><i class="fa-solid fa-bolt"></i></div>
+            <div>
+                <h1>UniCarbon <span>Power</span></h1>
+                <p>校園動能發電站 #01</p>
+            </div>
+        </div>
+        <div class="status-badge" id="statusBadge">
+            <span class="dot"></span> 未連接藍芽
+        </div>
+    </header>
+
+    <div class="hero-card">
+        <div class="hero-label"><i class="fa-solid fa-coins"></i> 預估獲得碳幣</div>
+        <div class="hero-value" id="coinsDisplay">+0.0</div>
+        <div class="hero-subtext">讓每一腳踏踏實實轉化為綠色獎勵</div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-clock"></i></div>
+            <div class="stat-content">
+                <span class="stat-label">騎行時間</span>
+                <span class="stat-value" id="timeDisplay">00:00</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-gauge-high"></i></div>
+            <div class="stat-content">
+                <span class="stat-label">踏頻 (RPM)</span>
+                <span class="stat-value" id="rpmDisplay">0</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-plug-circle-bolt"></i></div>
+            <div class="stat-content">
+                <span class="stat-label">節省電量</span>
+                <span class="stat-value" id="energyDisplay">0.000 <small>kWh</small></span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-fire-flame-curved"></i></div>
+            <div class="stat-content">
+                <span class="stat-label">消耗熱量</span>
+                <span class="stat-value" id="calorieDisplay">0 <small>kcal</small></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="btn-group">
+        <button class="btn btn-bluetooth" id="connectBtn" onclick="connectBluetooth()">
+            <i class="fa-brands fa-bluetooth-b"></i> 配對感應器
+        </button>
+        <button class="btn btn-start" id="startBtn" onclick="toggleRide()">
+            <i class="fa-solid fa-play"></i> 開始騎行
+        </button>
+    </div>
+
+    <div class="qr-overlay" id="qrOverlay">
+        <div class="qr-modal">
+            <div class="success-icon"><i class="fa-solid fa-circle-check"></i></div>
+            <h2>騎行發電完成！</h2>
+            <p class="qr-subtitle">請打開 <span>UNI Carbon App</span> 掃碼領取碳幣</p>
+
+            <div class="qr-wrapper">
+                <div id="qrcode"></div>
+            </div>
+
+            <div class="summary-box">
+                <div class="summary-item">
+                    <span>時間</span>
+                    <strong id="summaryTime">00:00</strong>
+                </div>
+                <div class="summary-divider"></div>
+                <div class="summary-item">
+                    <span>電量</span>
+                    <strong id="summaryEnergy">0.00 kWh</strong>
+                </div>
+                <div class="summary-divider"></div>
+                <div class="summary-item">
+                    <span>獲得碳幣</span>
+                    <strong id="summaryCoins" class="highlight">+0</strong>
+                </div>
+            </div>
+
+            <button class="btn btn-done" onclick="closeQR()">
+                完成 / 下一位使用者
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
