@@ -118,13 +118,13 @@ function finishRide() {
     document.getElementById('summaryCoins').innerText = `+${coins} 碳幣`;
 
     // 生成給 UNI Carbon App 掃描的二維碼 Payload (JSON 格式)
-    let sessionData = {
-        station: "BIKE_01",
-        timestamp: Date.now(),
-        duration_sec: seconds,
-        kwh_saved: parseFloat(kwh),
-        coins: parseFloat(coins)
-    };
+  let sessionData = {
+    bike_id: "BIKE-01",
+    timestamp: Date.now(),
+    duration_sec: seconds,
+    kwh_saved: parseFloat(kwh),
+    coins: parseFloat(coins)
+};
 
     document.getElementById('qrcode').innerHTML = "";
     new QRCode(document.getElementById("qrcode"), {
