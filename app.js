@@ -1,125 +1,98 @@
-/**
- * UniCarbon Power - 單車發電儀表板核心邏輯
- * 包含：Web Bluetooth 藍芽感應器連線、發電量與碳幣計算、QR Code 生成
- */
-
-// ==================== 全域狀態管理 ====================
-const CONFIG = {
-    BIKE_ID: "BIKE-01",
-    COIN_MULTIPLIER: 20000, // 🎯 1 kWh = 20000 碳幣 (1 分鐘正常騎行約可獲得 ~25 個碳幣)
-    AVG_WATTS: 75           // 預設發電功率 (瓦特 W)
-};
-
+// 全域變數
 let bluetoothDevice = null;
 let gattServer = null;
 let isRiding = false;
 let rideTimer = null;
-
-// 騎行數據變數
 let rideTimeInSeconds = 0;
 let rpm = 0;
 let totalKwh = 0;
 let totalCoins = 0;
 
-// ==================== 1. 藍芽連線邏輯 ====================
+// 1. 藍芽連接邏輯 (Web Bluetooth API)
 async function connectBluetooth() {
     const statusBadge = document.getElementById("statusBadge");
     try {
-        if (!statusBadge) return;
         statusBadge.innerHTML = '<span class="dot"></span> 搜尋裝置中...';
-
-        // 請求單車踏頻感應器 (Cycling Speed and Cadence Service)
+        
+        // 搜尋單車速頻感應器 (Cycling Speed and Cadence Service)
         bluetoothDevice = await navigator.bluetooth.requestDevice({
             filters: [{ services: ['cycling_speed_and_cadence'] }]
         });
 
         gattServer = await bluetoothDevice.gatt.connect();
-
+        
         statusBadge.classList.add("connected");
         statusBadge.innerHTML = '<span class="dot"></span> 已連接感應器';
-        alert("🎉 藍芽感應器連線成功！");
+        alert("藍芽感應器連接成功！");
     } catch (error) {
-        console.warn("藍芽連線未完成:", error);
-        if (statusBadge) {
-            statusBadge.classList.remove("connected");
-            statusBadge.innerHTML = '<span class="dot"></span> 未連接藍芽';
-        }
-        alert("未連接藍芽感應器，系統將切換為模擬測試模式。");
+        console.error("藍芽連接失敗:", error);
+        statusBadge.classList.remove("connected");
+        statusBadge.innerHTML = '<span class="dot"></span> 未連接藍芽';
+        alert("連接失敗或取消連線，將切換為模擬模式（測試用）。");
     }
 }
 
-// ==================== 2. 騎行狀態切換 ====================
+// 2. 切換騎行狀態 (開始 / 結束)
 function toggleRide() {
     const startBtn = document.getElementById("startBtn");
-    if (!startBtn) return;
 
     if (!isRiding) {
-        // --- 開始騎行 ---
+        // 開始騎行
         isRiding = true;
         startBtn.innerHTML = '<i class="fa-solid fa-square"></i> 結束騎行';
         startBtn.className = "btn btn-danger";
-
-        // 每秒觸發一次數據更新
+        
+        // 開始計時與數據更新
         rideTimer = setInterval(updateMetrics, 1000);
     } else {
-        // --- 結束騎行 ---
+        // 結束騎行
         isRiding = false;
         clearInterval(rideTimer);
 
-        // 產生 QR Code 彈窗
+        // 彈出 QR Code 視窗
         generateQRCode();
 
-        // 恢復按鈕狀態
+        // 按鈕復原
         startBtn.innerHTML = '<i class="fa-solid fa-play"></i> 開始騎行';
         startBtn.className = "btn btn-start";
     }
 }
 
-// ==================== 3. 數據計算與 UI 更新 ====================
+// 3. 數據計算邏輯 (每秒更新)
 function updateMetrics() {
     rideTimeInSeconds++;
 
-    // 踏頻 (RPM) 模擬計算 (60~85 RPM)
+    // 模擬踏頻 (RPM) 與電量計算 (若無實體藍芽則給予模擬值)
     rpm = isRiding ? Math.floor(Math.random() * (85 - 60 + 1)) + 60 : 0;
-
-    // 發電量計算：功率(W) / 1000 = kW，再除以 3600 秒得到這秒的 kWh
-    const currentWatts = (rpm / 80) * CONFIG.AVG_WATTS;
+    
+    // 假設發電功率與踏頻成正比 (約 50W~100W)，換算每秒發電量 (kWh)
+    const currentWatts = (rpm / 80) * 75; // 平均 75W
     const kwhThisSecond = (currentWatts / 1000) / 3600;
     totalKwh += kwhThisSecond;
 
-    // 🎯 碳幣換算公式：根據發電量乘以 20000 (1 分鐘約 0.00125 kWh = 約 25 碳幣)
-    totalCoins = totalKwh * CONFIG.COIN_MULTIPLIER;
+    // 🎯 換算碳幣：1 kWh = 20000 碳幣 (正常騎行 1 分鐘約獲得 25 個碳幣)
+    totalCoins = totalKwh * 20000;
 
-    // 更新畫面顯示
-    updateUI();
+    // 顯示於 UI 畫面
+    document.getElementById("timeDisplay").innerText = formatTime(rideTimeInSeconds);
+    document.getElementById("rpmDisplay").innerText = rpm;
+    document.getElementById("energyDisplay").innerHTML = `${totalKwh.toFixed(4)} <small>kWh</small>`;
+    document.getElementById("calorieDisplay").innerHTML = `${Math.round(totalKwh * 860)} <small>kcal</small>`;
+    document.getElementById("coinsDisplay").innerText = `+${totalCoins.toFixed(1)}`;
 }
 
-function updateUI() {
-    const timeElem = document.getElementById("timeDisplay");
-    const rpmElem = document.getElementById("rpmDisplay");
-    const energyElem = document.getElementById("energyDisplay");
-    const calorieElem = document.getElementById("calorieDisplay");
-    const coinsElem = document.getElementById("coinsDisplay");
-
-    if (timeElem) timeElem.innerText = formatTime(rideTimeInSeconds);
-    if (rpmElem) rpmElem.innerText = rpm;
-    if (energyElem) energyElem.innerHTML = `${totalKwh.toFixed(4)} <small>kWh</small>`;
-    if (calorieElem) calorieElem.innerHTML = `${Math.round(totalKwh * 860)} <small>kcal</small>`;
-    if (coinsElem) coinsElem.innerText = `+${totalCoins.toFixed(1)}`;
-}
-
-// 時間格式化工具 (秒 -> MM:SS)
+// 時間格式化 (格式 mm:ss)
 function formatTime(seconds) {
     const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
     const secs = (seconds % 60).toString().padStart(2, '0');
     return `${mins}:${secs}`;
 }
 
-// ==================== 4. 生成 QR Code (Glide 專用 JSON 格式) ====================
+// 4. 生成二維碼 (完全符合 Glide 的標準 JSON 格式)
 function generateQRCode() {
-    // 打包乾淨標準的 JSON 物件 (無 timestamp，防 iOS 誤判為電話選單)
+    // 建立二維碼數據物件 (無 timestamp，防 iPhone 誤判為電話)
     const sessionData = {
-        "bike_id": CONFIG.BIKE_ID,
+        "bike_id": "BIKE-01",
         "duration_sec": rideTimeInSeconds,
         "kwh_saved": parseFloat(totalKwh.toFixed(4)),
         "coins": parseFloat(totalCoins.toFixed(1))
@@ -127,47 +100,41 @@ function generateQRCode() {
 
     const jsonString = JSON.stringify(sessionData);
 
-    // 清空舊的二維碼圖片
+    // 清空並重新生成 QR Code
     const qrContainer = document.getElementById("qrcode");
-    if (qrContainer) {
-        qrContainer.innerHTML = "";
+    qrContainer.innerHTML = "";
 
-        // 使用 QRCode.js 套件繪製二維碼
-        new QRCode(qrContainer, {
-            text: jsonString,
-            width: 180,
-            height: 180,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.H
-        });
-    }
+    new QRCode(qrContainer, {
+        text: jsonString,
+        width: 180,
+        height: 180,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+    });
 
     // 更新彈窗內的數據摘要
-    const summaryTime = document.getElementById("summaryTime");
-    const summaryEnergy = document.getElementById("summaryEnergy");
-    const summaryCoins = document.getElementById("summaryCoins");
+    document.getElementById("summaryTime").innerText = formatTime(rideTimeInSeconds);
+    document.getElementById("summaryEnergy").innerText = `${totalKwh.toFixed(4)} kWh`;
+    document.getElementById("summaryCoins").innerText = `+${totalCoins.toFixed(1)}`;
 
-    if (summaryTime) summaryTime.innerText = formatTime(rideTimeInSeconds);
-    if (summaryEnergy) summaryEnergy.innerText = `${totalKwh.toFixed(4)} kWh`;
-    if (summaryCoins) summaryCoins.innerText = `+${totalCoins.toFixed(1)}`;
-
-    // 顯示 Modal 遮罩彈窗
-    const qrOverlay = document.getElementById("qrOverlay");
-    if (qrOverlay) qrOverlay.style.display = "flex";
+    // 顯示 Modal 彈窗
+    document.getElementById("qrOverlay").style.display = "flex";
 }
 
-// ==================== 5. 關閉彈窗並重置數據 ====================
+// 5. 關閉 QR Code 視窗並重置數據 (下一位使用者)
 function closeQR() {
-    const qrOverlay = document.getElementById("qrOverlay");
-    if (qrOverlay) qrOverlay.style.display = "none";
-
-    // 重置所有變數
+    document.getElementById("qrOverlay").style.display = "none";
+    
+    // 重置變數與 UI
     rideTimeInSeconds = 0;
     totalKwh = 0;
     totalCoins = 0;
     rpm = 0;
 
-    // 歸零 UI 畫面
-    updateUI();
+    document.getElementById("timeDisplay").innerText = "00:00";
+    document.getElementById("rpmDisplay").innerText = "0";
+    document.getElementById("energyDisplay").innerHTML = `0.0000 <small>kWh</small>`;
+    document.getElementById("calorieDisplay").innerHTML = `0 <small>kcal</small>`;
+    document.getElementById("coinsDisplay").innerText = "+0.0";
 }
