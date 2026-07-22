@@ -70,8 +70,8 @@ function updateMetrics() {
     const kwhThisSecond = (currentWatts / 1000) / 3600;
     totalKwh += kwhThisSecond;
 
-    // 換算碳幣 (例如: 1 kWh = 40 碳幣)
-    totalCoins = totalKwh * 40;
+    // 換算碳幣 (例如: 1 kWh = 20000 碳幣)
+    totalCoins = totalKwh * 20000;
 
     // 顯示於 UI 畫面
     document.getElementById("timeDisplay").innerText = formatTime(rideTimeInSeconds);
