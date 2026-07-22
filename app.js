@@ -70,7 +70,7 @@ function updateMetrics() {
     const kwhThisSecond = (currentWatts / 1000) / 3600;
     totalKwh += kwhThisSecond;
 
-    // 換算碳幣 (例如: 1 kWh = 20000 碳幣)
+    // 🎯 按實際發電量換算碳幣 (1 kWh = 20000 碳幣，無保底獎勵)
     totalCoins = totalKwh * 20000;
 
     // 顯示於 UI 畫面
@@ -88,11 +88,15 @@ function formatTime(seconds) {
     return `${mins}:${secs}`;
 }
 
-// 4. 生成二維碼 (完全符合 Glide 的標準 JSON 格式)
+// 4. 生成二維碼 (帶有 session_id，防重複領取)
 function generateQRCode() {
-    // 建立二維碼數據物件 (無 timestamp，防 iPhone 誤判為電話)
+    // 🔑 產生一次性隨機 ID (亂數憑證)
+    const uniqueSessionId = "SESSION-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+
+    // 建立二維碼數據物件 (標準 JSON 格式)
     const sessionData = {
         "bike_id": "BIKE-01",
+        "session_id": uniqueSessionId, // 🔑 一次性驗證 ID
         "duration_sec": rideTimeInSeconds,
         "kwh_saved": parseFloat(totalKwh.toFixed(4)),
         "coins": parseFloat(totalCoins.toFixed(1))
